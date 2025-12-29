@@ -1,0 +1,45 @@
+
+services:
+
+  php:
+    build: ./docker/php
+    container_name: elva-php
+    working_dir: /var/www/html
+    env_file:
+      - ./.env
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - mssql
+    command: /usr/local/bin/init.sh
+  nginx:
+    image: nginx:1.25
+    container_name: elva-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: elva-mssql
+    env_file:
+      - ./.env
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "StrongPassword123!"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1435:1433"
+    volumes:
+      - ./docker/mssql/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "StrongPassword123!", "-C", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+volumes:
+  mssql_data:

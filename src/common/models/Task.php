@@ -1,0 +1,135 @@
+<?php
+
+namespace common\models;
+
+use Yii;
+use yii\behaviors\TimestampBehavior;
+use yii\behaviors\BlameableBehavior;
+
+/**
+ * This is the model class for table "task".
+ *
+ * @property int $id
+ * @property int $construction_site_id
+ * @property string $title
+ * @property string|null $description
+ * @property int|null $status
+ * @property int $created_by
+ * @property string|null $created_at
+ * @property string|null $updated_at
+ *
+ * @property ConstructionSite $constructionSite
+ * @property TaskAssignment[] $taskAssignments
+ */
+class Task extends \yii\db\ActiveRecord
+{
+
+    const STATUS_DRAFT = 0;
+    const STATUS_ACTIVE = 1;
+    const STATUS_CANCELLED = 2;
+    const STATUS_ARCHIVED = 3;
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function tableName()
+    {
+        return 'task';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rules()
+    {
+        return [
+            [['description'], 'default', 'value' => null],
+            [['status'], 'default', 'value' => 0],
+            [['updated_at'], 'default', 'value' =>  function() { return date('Y-m-d H:i:s'); }],
+            [['construction_site_id', 'title'], 'required'],
+            [['construction_site_id', 'status', 'created_by'], 'integer'],
+            [['description'], 'string'],
+            [['created_at', 'updated_at'], 'safe'],
+            [['created_by'], 'integer'],
+            [['title'], 'string', 'max' => 128],
+            [['construction_site_id'], 'exist', 'skipOnError' => true, 'targetClass' => ConstructionSite::class, 'targetAttribute' => ['construction_site_id' => 'id']],
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function attributeLabels()
+    {
+        return [
+            'id' => 'ID',
+            'construction_site_id' => 'Construction Site ID',
+            'title' => 'Title',
+            'description' => 'Description',
+            'status' => 'Status',
+            'created_by' => 'Created By',
+            'created_at' => 'Created At',
+            'updated_at' => 'Updated At',
+        ];
+    }
+
+    /**
+     * Gets query for [[ConstructionSite]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getConstructionSite()
+    {
+        return $this->hasOne(ConstructionSite::class, ['id' => 'construction_site_id']);
+    }
+
+    /**
+     * Gets query for [[TaskAssignments]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getAssignments()
+    {
+        return $this->hasMany(TaskAssignment::class, ['task_id' => 'id']);
+    }
+
+    /**
+     * Returns list of status labels
+     *
+     * @return array<int,string>
+     */
+    public static function statusList(): array
+    {
+        return [
+            self::STATUS_DRAFT => 'Draft',
+            self::STATUS_ACTIVE => 'Active',
+            self::STATUS_ARCHIVED => 'Archived',
+            self::STATUS_CANCELLED => 'Cancelled',
+        ];
+    }
+
+    public function getStatusLabel(): string
+    {
+        return self::statusList()[$this->status] ?? '—';
+    }
+
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => TimestampBehavior::class,
+                'createdAtAttribute' => 'created_at',
+                'updatedAtAttribute' => 'updated_at',
+                'value' => function() {
+                    return date('Y-m-d H:i:s'); // SQL Server safe format
+                },
+            ],
+            [
+            'class' => BlameableBehavior::class,
+            'createdByAttribute' => 'created_by',
+            'updatedByAttribute' => null,
+            ],
+        ];
+    }
+
+}

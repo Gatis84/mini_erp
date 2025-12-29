@@ -1,0 +1,37 @@
+# Ignore Git repo
+.git/
+.gitignore
+
+# Ignore local environments
+.env
+.env.*
+*.local
+
+# Ignore Composer vendor (nevelkam no hosta)
+vendor/
+src/vendor/
+
+# Ignore Docker metadata
+docker/*.pid
+
+# Ignore runtime assets
+src/frontend/runtime/
+src/backend/runtime/
+src/console/runtime/
+src/frontend/web/assets/
+src/backend/web/assets/
+
+# Ignore logs
+*.log
+
+# Ignore IDE stuff
+.idea/
+.vscode/
+
+# Node stuff (ja netīšām būs)
+node_modules/
+npm-debug.log
+
+# OS files
+.DS_Store
+Thumbs.db

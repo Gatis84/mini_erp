@@ -1,0 +1,2 @@
+CREATE DATABASE elva_db;
+GO

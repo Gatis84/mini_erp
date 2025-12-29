@@ -1,0 +1,119 @@
+# ===========================================
+# Yii2 Advanced + Docker + MSSQL .gitignore
+# Updated: 2025-12-29
+# Docker-friendly: ignore files generated at runtime and by containers/IDEs
+# ===========================================
+
+# --------------------
+# OS / Editor files
+# --------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# IDEs / editors
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# --------------------
+# PHP / Composer
+# --------------------
+/vendor/
+src/vendor/
+composer.phar
+
+# --------------------
+# Yii runtime, web assets, uploads
+# --------------------
+src/**/runtime/
+src/**/web/assets/
+uploads/
+public/uploads/
+
+# --------------------
+# App runtime, cache & generated files
+# --------------------
+runtime/
+src/common/runtime/
+src/backend/runtime/
+src/frontend/runtime/
+src/console/runtime/
+.cache/
+*.cache
+
+# --------------------
+# Logs and test outputs
+# --------------------
+*.log
+coverage/
+build/
+**/tests/_output/
+**/tests/_data/
+.phpunit.result.cache
+phpunit.xml
+phpunit.xml.dist
+codeception.log
+
+# --------------------
+# Environment & secrets
+# --------------------
+
+# .env is intentionally committed for demo purposes
+.env.local
+.env.*.local
+.env.docker
+# --------------------
+# Docker & containers
+# --------------------
+mssql_data/
+docker/*.pid
+*.pid
+docker-compose.override.yml
+docker-compose.*.yml
+docker/*.log
+docker/*.crt
+docker/*.key
+
+# --------------------
+# Node / JS / Frontend
+# --------------------
+node_modules/
+npm-debug.log
+yarn-error.log
+.pnp
+.pnp.js
+dist/
+build/
+
+# --------------------
+# Vagrant
+# --------------------
+.vagrant/
+
+# --------------------
+# Misc / Local configs
+# --------------------
+*.sqlite
+*.sqlite3
+*.swp
+*.bak
+
+# Prevent accidental commits of local config files
+**/*-local.php
+*.local.php
+
+# --------------------
+# Helpful Docker note
+# --------------------
+# To create/overwrite this file from Docker in one command, run one of the following from your project root:
+# 
+# Bash / Linux / macOS:
+# docker run --rm -i -v "$PWD":/work -w /work alpine sh -lc "cat > .gitignore <<'EOF'\n$(sed -n '1,400p' c:\Users\oolaa\Documents\VScodeProjects\elva_task\.gitignore | sed "s/\\$/\\\\n/g")\nEOF"
+# 
+# PowerShell (Windows):
+# docker run --rm -i -v ${PWD}:/work -w /work alpine sh -lc "cat > .gitignore <<'EOF'\n$(sed -n '1,400p' c:\Users\oolaa\Documents\VScodeProjects\elva_task\.gitignore | sed "s/\\$/\\\\n/g")\nEOF"
+# 
+# If you prefer, I can give a ready-to-copy command for your shell that writes this exact file from Docker.
+
