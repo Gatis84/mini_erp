@@ -242,8 +242,8 @@ class SeedController extends Controller
 
 
         // START Get employee IDs who can create tasks
-        $userIds = RbacHelper::userIdsByPermission('task.create');
-
+        
+        $userIds = RbacHelper::userIdsByPermission('task.createLimited');
         $taskCreators = (new \yii\db\Query())
             ->select('id')
             ->from('{{%employee}}')
@@ -277,7 +277,7 @@ class SeedController extends Controller
             // $taskDate = $faker->dateTimeBetween('-1 years', 'now')->format('Y-m-d');
             $description = $faker->sentence(10);
             $title = $faker->sentence(3);
-            $status = $faker->randomElement($taskStatuses);
+            $status = $faker->randomElement(array_keys($taskStatuses));
             $created_at =  $faker->dateTimeBetween('-2 years', 'now');
             $updated_at =  $faker->dateTimeBetween($created_at, 'now');
 
