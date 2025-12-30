@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get update && apt-get install -y procps
 
 # Copy init script
-COPY init.sh /usr/local/bin/init.sh
+COPY ./init.sh /usr/local/bin/init.sh
 RUN chmod +x /usr/local/bin/init.sh
 
 WORKDIR /var/www/html

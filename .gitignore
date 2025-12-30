@@ -1,8 +1,6 @@
 # ===========================================
 # Yii2 Advanced + Docker + MSSQL .gitignore
-# Updated: 2025-12-29
-# Docker-friendly: ignore files generated at runtime and by containers/IDEs
-# ===========================================
+# ====================
 
 # --------------------
 # OS / Editor files
@@ -100,20 +98,6 @@ build/
 *.swp
 *.bak
 
-# Prevent accidental commits of local config files
+# commits of local config files
 **/*-local.php
 *.local.php
-
-# --------------------
-# Helpful Docker note
-# --------------------
-# To create/overwrite this file from Docker in one command, run one of the following from your project root:
-# 
-# Bash / Linux / macOS:
-# docker run --rm -i -v "$PWD":/work -w /work alpine sh -lc "cat > .gitignore <<'EOF'\n$(sed -n '1,400p' c:\Users\oolaa\Documents\VScodeProjects\elva_task\.gitignore | sed "s/\\$/\\\\n/g")\nEOF"
-# 
-# PowerShell (Windows):
-# docker run --rm -i -v ${PWD}:/work -w /work alpine sh -lc "cat > .gitignore <<'EOF'\n$(sed -n '1,400p' c:\Users\oolaa\Documents\VScodeProjects\elva_task\.gitignore | sed "s/\\$/\\\\n/g")\nEOF"
-# 
-# If you prefer, I can give a ready-to-copy command for your shell that writes this exact file from Docker.
-
