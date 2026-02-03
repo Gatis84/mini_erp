@@ -89,10 +89,9 @@ class ConstructionSiteController extends Controller
     public function actionCreate()
     {
         if (!Yii::$app->user->can('project.create')) {
-            throw new ForbiddenHttpException();
+            throw new ForbiddenHttpException('You do not have permission to create construction sites.');
         }
 
-        
         $teamLeads = Employee::find()
             ->alias('e')
             ->innerJoin('user u', 'u.id = e.user_id')
@@ -146,7 +145,7 @@ class ConstructionSiteController extends Controller
     {
         
         if (!Yii::$app->user->can('project.update')) {
-            throw new ForbiddenHttpException();
+            throw new ForbiddenHttpException('You do not have permission to update construction sites.');
         }
 
         $teamLeads = Employee::find()
