@@ -3,13 +3,13 @@
 
 use yii\bootstrap5\Html;
 
-$this->title = 'ElvaTask BE - Job Management Admin';
+$this->title = 'WorkSys BE - Job Management Admin';
 ?>
 
 <div class="site-index">
     <div class="jumbotron text-center bg-secondary bg-gradient-secondary green text-white py-5 mb-5">
         <h1 class="display-4">Welcome to</h1>
-        <h1 class="display-4">ElvaTask Backend sysAdmin</h1>
+        <h1 class="display-4">WorkSys Backend sysAdmin</h1>
         <p class="lead">Manage Users, Employees, Construction Sites & Tasks</p>
         <p class="lead">with full permissions</p>
     </div>
