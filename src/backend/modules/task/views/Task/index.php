@@ -7,6 +7,7 @@ use yii\grid\ActionColumn;
 use yii\grid\GridView;
 use yii\helpers\ArrayHelper;
 use common\models\ConstructionSite;
+use common\models\Employee;
 
 /** @var yii\web\View $this */
 /** @var common\models\TaskSearch $searchModel */
@@ -44,13 +45,17 @@ $this->params['breadcrumbs'][] = $this->title;
             'title',
             'description',
             [
+                'attribute' => 'employee_id',
                 'label' => 'Assigned Employees',
                 'value' => function ($model) {
                     return implode(', ', array_map(
-                        fn($a) => $a->employee->first_name . ' ' . $a->employee->last_name,
+                        fn($a) => $a->employee_id . '. ' . $a->employee->first_name . ' ' . $a->employee->last_name,
                         $model->assignments
                     ));
                 },
+                'filter' => ArrayHelper::map(Employee::find()->all(), 'id', function($e) {
+                    return $e->id . '. ' . $e->first_name . ' ' . $e->last_name;
+                 }),
             ],
             [
                 'attribute' => 'status',
