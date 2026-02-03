@@ -12,6 +12,8 @@ use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\web\ForbiddenHttpException;
 use yii;
+use common\services\RoleChangeService;
+use common\services\AssignmentService;
 
 /**
  * EmployeeController implements the CRUD actions for Employee model.
@@ -61,20 +63,6 @@ class EmployeeController extends Controller
      */
     public function actionIndex()
     {
-
-//         var_dump(Yii::$app->user->can('employee.view'));die;
-
-//         dd(Yii::$app->user->id,
-//         Yii::$app->authManager->getAssignments(Yii::$app->user->id),
-//         Yii::$app->authManager->getRolesByUser(Yii::$app->user->id),
-//         array_keys(Yii::$app->authManager->getPermissionsByUser(Yii::$app->user->id)),
-// );
-
-
-        if (!Yii::$app->user->can('employee.view')) {
-            throw new ForbiddenHttpException();
-        }
-
         $searchModel = new EmployeeSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
 
@@ -302,11 +290,21 @@ class EmployeeController extends Controller
         // unified permission check for deactivate
         $this->assertPermissionWithLimited('user.deactivate', 'user.deactivateLimited', ['model' => $employee]);
 
+        // Capture current permissions before revoking so we can cleanup domain data
+        $auth = Yii::$app->authManager;
+        $oldPermissions = array_keys($auth->getPermissionsByUser($user->id));
+
         $user->status = User::STATUS_INACTIVE;
         $user->save(false);
 
         // Revoke RBAC assignments on deactivate to prevent a deactivated user from acting
-        Yii::$app->authManager->revokeAll($user->id);
+        $auth->revokeAll($user->id);
+
+        // Cleanup domain data for revoked permissions (e.g., deactivate assignments)
+        RoleChangeService::syncAfterRoleChange($user->id, $oldPermissions, []);
+
+        // Ensure assignments are deactivated even if no permission mapping matched
+        AssignmentService::deactivateAssignmentsForUser($user->id);
 
         return $this->redirect(['view', 'id' => $employee->id]);
     }
@@ -334,6 +332,9 @@ class EmployeeController extends Controller
                 $auth->assign($role, $user->id);
             }
         }
+
+        // Reactivate any previously deactivated assignments for this user
+        AssignmentService::reactivateAssignmentsForUser($user->id);
 
         return $this->redirect(['view', 'id' => $employee->id]);
     }
