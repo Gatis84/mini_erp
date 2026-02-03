@@ -55,17 +55,17 @@ END
 # Give MSSQL time to finalize DB metadata
 sleep 5
 
-# Run migrations (idempotent)
+# Run migrations
 echo "Running migrations..."
 php yii migrate --interactive=0 || echo "Migrations skipped / already applied"
 
 
-# RBAC init (safe to re-run)
+# RBAC init
 echo "Initializing RBAC..."
 php yii rbac/init || echo "RBAC already initialized"
 
 
-# Seed data (non-fatal)
+# Seed data
 echo "Seeding database (safe mode)..."
 echo "NOTE: truncate enabled inside seeders"
 
