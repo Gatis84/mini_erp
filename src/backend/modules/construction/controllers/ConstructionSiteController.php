@@ -102,21 +102,34 @@ class ConstructionSiteController extends Controller
     {
         $model = $this->findModel($id);
 
-        $model->teamLeadIds = ConstructionAssignment::find()
-                ->select('employee_id')
-                ->where(['construction_site_id' => $id])
-                ->column();
+        $CAs_data = ConstructionAssignment::find()
+        ->select(['employee_id', 'assigned_at', 'reassigned_at', 'active'])
+        ->where(['construction_site_id' => $model->id])
+        ->asArray()
+        ->all();
+
+        $model->teamLeadAssignments = [];
+
+        foreach ($CAs_data as $ca) {
+            $model->teamLeadAssignments[(int)$ca['employee_id']] = [
+                'assigned_at' => $ca['assigned_at'],
+                'reassigned_at' => $ca['reassigned_at'],
+                'active' => (bool)$ca['active'],
+            ];
+        }
+
+        $employees = Employee::find()
+        ->where(['id' => array_keys($model->teamLeadAssignments)])
+        ->indexBy('id')
+        ->all();
 
         return $this->render('view', [
             'model' => $model,
+            'employees' => $employees,
         ]);
+
     }
 
-    /**
-     * Creates a new ConstructionSite model.
-     * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return string|\yii\web\Response
-     */
     public function actionCreate()
     {
 
@@ -177,7 +190,7 @@ class ConstructionSiteController extends Controller
      */
     public function actionUpdate($id)
     {
-         $teamLeads = Employee::find()
+        $teamLeads = Employee::find()
             ->alias('e')
             ->innerJoin('user u', 'u.id = e.user_id')
             ->where([
@@ -194,37 +207,106 @@ class ConstructionSiteController extends Controller
         $model = $this->findModel($id);
 
         $model->teamLeadIds = ConstructionAssignment::find()
-        ->select('employee_id')
-        ->where(['construction_site_id' => $id])
-        ->column();
+            ->select('employee_id')
+            ->where(['construction_site_id' => $id, 'active' => 1,])
+            ->column();
 
         $assignment = new ConstructionAssignment();
 
-
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            
+            $newIds = is_array($model->teamLeadIds) ? $model->teamLeadIds : [];
 
-            ConstructionAssignment::deleteAll([
-                    'construction_site_id' => $model->id,
-                ]);
+            $newIds = array_values(array_unique(array_map('intval', $newIds)));
 
-            $ids = is_array($model->teamLeadIds) ? $model->teamLeadIds : [];
+            // Get all current Assignments (active=1,active=0)
+                $existingRows = ConstructionAssignment::find()
+                    ->select(['employee_id', 'active', 'assigned_at', 'ended_at'])
+                    ->where(['construction_site_id' => $model->id])
+                    ->asArray()
+                    ->all();
 
+                $existingAll = [];
+                $activeIds = [];
+                $inactiveIds = [];
 
-            foreach ($ids as $employeeId) {
-                $ca = new ConstructionAssignment();
-                $ca->construction_site_id = $model->id;
-                $ca->employee_id = $employeeId;
-                $ca->save(false);
-            }
+                foreach ($existingRows as $row) {
+                    $eid = (int)$row['employee_id'];
+                    $existingAll[$eid] = $row;
+
+                    if ((int)$row['active'] === 1) {
+                        $activeIds[] = $eid;
+                    } else {
+                        $inactiveIds[] = $eid;
+                    }
+                }
+
+                $activeIds = array_values(array_unique($activeIds));
+                $inactiveIds = array_values(array_unique($inactiveIds));
+
+                // Added
+                $toInsert = array_diff($newIds, array_keys($existingAll));
+
+                // Was Inactive, now need to Reactivate
+                $toReactivate = array_intersect($newIds, $inactiveIds);
+
+                // Was active, but now not chosen, so Deactivate them
+                $toDeactivate = array_diff($activeIds, $newIds);
+
+                $tx = Yii::$app->db->beginTransaction();
+                try {
+                    // INSERT new ones
+                    foreach ($toInsert as $employeeId) {
+                        $ca = new ConstructionAssignment();
+                        $ca->construction_site_id = $model->id;
+                        $ca->employee_id = (int)$employeeId;
+                        $ca->active = 1;
+                        // assigned_at default GETDATE()
+                        $ca->save(false);
+                    }
+
+                    // REACTIVATE (with saved previous assigned_at)
+                    if (!empty($toReactivate)) {
+                        ConstructionAssignment::updateAll(
+                            [
+                                'active' => 1,
+                                'reassigned_at' => new \yii\db\Expression('GETDATE()'),
+                                'ended_at' => null,
+                            ],
+                            [
+                                'construction_site_id' => $model->id,
+                                'employee_id' => $toReactivate,
+                            ]
+                        );
+                    }
+
+                    // DEACTIVATE
+                    if (!empty($toDeactivate)) {
+                        ConstructionAssignment::updateAll(
+                            [
+                                'active' => 0,
+                                'ended_at' => new \yii\db\Expression('GETDATE()'),
+                            ],
+                            [
+                                'construction_site_id' => $model->id,
+                                'employee_id' => $toDeactivate,
+                            ]
+                        );
+                    }
+
+                    $tx->commit();
+                } catch (\Throwable $e) {
+                    $tx->rollBack();
+                    throw $e;
+                }
 
             return $this->redirect(['view', 'id' => $model->id]);
-
         }
 
         return $this->render('update', [
             'model' => $model,
             'teamLeads' => $teamLeads,
-            'assignment' => $assignment,
+            'assignment' => $assignment
         ]);
     }
 
