@@ -53,7 +53,7 @@ AppAsset::register($this);
         echo Html::tag('div',Html::a('Login',['/site/login'],['class' => ['btn btn-link login text-decoration-none'], 'style' => 'color: white !important;']),['class' => ['d-flex']]);
     } else {
         $identity = Yii::$app->user->identity;
-        $roleName = $identity->employee ? $identity->employee->role : '';
+        $roleName = $identity->employee ? $identity->employee->role : 'NoEmployeeAccount';
         echo Html::beginForm(['/site/logout'], 'post', ['class' => 'd-flex'])
             . Html::submitButton(
                 'Logout (' . $roleName . ': ' . Yii::$app->user->identity->username . ')',
