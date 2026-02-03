@@ -33,7 +33,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'location',
             'area_m2',
             'required_access_level',
-            'created_at',
+            'created_at:datetime',
             //'updated_at',
             [
                 'class' => ActionColumn::class,
