@@ -141,6 +141,25 @@ class Task extends \yii\db\ActiveRecord
         return self::statusList()[$this->status] ?? '—';
     }
 
+    public function getTaskCreator()
+    {
+        return $this->hasOne(Employee::class, ['user_id' => 'created_by']);
+    }
+
+    public function getCreatorData(): ?array
+    {
+        $e = $this->taskCreator;
+        if (!$e) {
+            return null;
+        }
+        return [
+            'user_id' => $e->user_id,
+            'first_name' => $e->first_name,
+            'last_name' => $e->last_name,
+            'username' => $e->user->username ?? null,
+        ];
+    }
+
     public function behaviors()
     {
         return [
