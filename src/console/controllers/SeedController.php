@@ -8,7 +8,9 @@ use yii\helpers\Console;
 use common\models\User;
 use yii\console\ExitCode;
 use common\components\RbacHelper;
+use common\models\ConstructionSite;
 use common\models\Task;
+use common\models\TaskAssignment;
 
 class SeedController extends Controller
 {
@@ -68,7 +70,7 @@ class SeedController extends Controller
             $lastName = $faker->lastName;
             // $lastName = $faker->lastName . rand(1,99);
             $birthDate = $faker->date('Y-m-d', '-18 years');
-            $access_level = $faker->numberBetween(1, 5);
+            $access_level = $faker->randomElement(array_keys(ConstructionSite::getAccessLevels()));
             $role = $faker->randomElement($RBACRoles);
             $status = $faker->randomElement([User::STATUS_ACTIVE, User::STATUS_INACTIVE]); // 10/9/0 => From src\common\models\User.php
             $created_at =  $faker->dateTimeBetween('-2 years', 'now');
@@ -86,7 +88,7 @@ class SeedController extends Controller
                 $user->status = $status;
                 $user->setPassword('user123' . ($i+1));
                 $user->generateAuthKey();
-                $user->generateEmailVerificationToken();
+                $user->generateEmailVerificationToken(); //fake sent emails for confirmation => src\frontend\runtime\mail\*.eml
                 $user->created_at = time();
                 $user->updated_at = time();
                 $user->password_reset_token = uniqid();
@@ -109,7 +111,6 @@ class SeedController extends Controller
                     'birth_date' => $birthDate,
                     'access_level' => $access_level,
                     'role' => $role,
-                    // 'status' => $status,
                     'user_id' => $user->id,
                     'created_at' => $created_at->format('Y-m-d H:i:s'),
                     'updated_at' => $updated_at->format('Y-m-d H:i:s'),
@@ -138,6 +139,8 @@ class SeedController extends Controller
     /**
      * Seed construction_site table
      * Usage: php yii seed/site 10 --truncate=1
+     * @param int $count Number of records to generate
+     * @param int $truncate Whether to truncate the table before seeding (0/1)
      */
     public function actionSite($count = 10, $truncate = 0)
     {
@@ -180,7 +183,7 @@ class SeedController extends Controller
         for ($i = 0; $i < $count; $i++) {
             $location = $faker->address;
             $area = $faker->numberBetween(200, 20000);
-            $requiredAccess = $faker->numberBetween(1, 5);
+            $requiredAccess = $faker->randomelement(array_keys(ConstructionSite::getAccessLevels()));
             $created_at =  $faker->dateTimeBetween('-2 years', 'now');
             $updated_at =  $faker->dateTimeBetween($created_at, 'now');
 
@@ -200,9 +203,6 @@ class SeedController extends Controller
                     'construction_site_id' => $siteId,
                     'employee_id' => $faker->randomElement($teamLeadIds),
                     'assigned_at' => $faker->dateTimeBetween('-6 months', 'now')->format('Y-m-d H:i:s'),
-                    'completed_at' => $faker->boolean(40)
-                        ? $faker->dateTimeBetween('-1 month', 'now')->format('Y-m-d H:i:s')
-                        : null,
                 ])->execute();
                 
             } catch (\Exception $e) {
@@ -221,6 +221,8 @@ class SeedController extends Controller
     /**
      * Seed task table
      * Usage: php yii seed/task 100 --truncate=1
+     * @param int $count Number of records to generate
+     * @param int $truncate Whether to truncate the table before seeding (0/1
      */
     public function actionTask($count = 100, $truncate = 0)
     {
@@ -242,7 +244,6 @@ class SeedController extends Controller
 
 
         // START Get employee IDs who can create tasks
-        
         $userIds = RbacHelper::userIdsByPermission('task.createLimited');
         $taskCreators = (new \yii\db\Query())
             ->select('id')
@@ -274,24 +275,29 @@ class SeedController extends Controller
         for ($i = 0; $i < $count; $i++) {
             $employeeId = $faker->randomElement($employeeIds);
             $siteId = $faker->randomElement($siteIds);
-            // $taskDate = $faker->dateTimeBetween('-1 years', 'now')->format('Y-m-d');
             $description = $faker->sentence(10);
             $title = $faker->sentence(3);
             $status = $faker->randomElement(array_keys($taskStatuses));
             $created_at =  $faker->dateTimeBetween('-2 years', 'now');
             $updated_at =  $faker->dateTimeBetween($created_at, 'now');
+            $completed_at = $faker->boolean(40)
+                        ? $faker->dateTimeBetween('-1 month', 'now')->format('Y-m-d H:i:s')
+                        : null;
+            $planned_start_at = $faker->dateTimeBetween('-1 month', 'now')->format('Y-m-d H:i:s');
+            $planned_end_at = $faker->dateTimeBetween('now', '+1 month')->format('Y-m-d H:i:s');
 
             try {
                 $db->createCommand()->insert($tableName, [
                     'construction_site_id' => $siteId,
                     'title' => $title,
                     'description' => $description,
-                    // 'employee_id' => $employeeId,
-                    // 'task_date' => $taskDate,
                     'status' => $status,
                     'created_by' => $faker->randomElement($taskCreators),
                     'created_at' => $created_at->format('Y-m-d H:i:s'),
                     'updated_at' => $updated_at->format('Y-m-d H:i:s'),
+                    'planned_start_at' => $planned_start_at,
+                    'planned_end_at' => $planned_end_at,
+                    'completed_at' => $completed_at,
                 ])->execute();
 
                 $taskId = $db->getLastInsertID();
@@ -300,12 +306,7 @@ class SeedController extends Controller
                     'task_id' => $taskId,
                     'employee_id' => $employeeId,
                     'assigned_at' => $faker->dateTimeBetween('-6 months', 'now')->format('Y-m-d H:i:s'),
-                    'completed_at' => $faker->boolean(40)
-                        ? $faker->dateTimeBetween('-1 month', 'now')->format('Y-m-d H:i:s')
-                        : null,
-                    'planned_start_at' => $faker->dateTimeBetween('-1 month', 'now')->format('Y-m-d H:i:s'),
-                    'planned_end_at' => $faker->dateTimeBetween('now', '+1 month')->format('Y-m-d H:i:s'),
-                    'status' => $faker->randomElement([0,1,2]),
+                    'status' => $faker->randomElement(array_keys(TaskAssignment::statusList())),
                 ])->execute();
 
             } catch (\Exception $e) {
