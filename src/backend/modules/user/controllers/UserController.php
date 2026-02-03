@@ -9,6 +9,8 @@ use yii\web\ForbiddenHttpException;
 use common\models\User;
 use common\models\UserSearch;
 use common\models\Employee;
+use common\services\RoleChangeService;
+use common\services\AssignmentService;
 
 class UserController extends Controller
 {
@@ -44,12 +46,11 @@ class UserController extends Controller
 
     public function actionDelete($id)
     {
-        if (!Yii::$app->user->can('user.delete')) {
+        $user = $this->findUser($id);
+        if (!Yii::$app->user->can('user.deleteOther', ['targetUserId' => $user->id])) {
             throw new ForbiddenHttpException();
         }
-
-        $user = $this->findUser($id);
-
+        
         $transaction = Yii::$app->db->beginTransaction();
         try {
             $user->status = User::STATUS_DELETED;
@@ -61,7 +62,16 @@ class UserController extends Controller
                 $employee->delete();
             }
 
+            // capture and cleanup domain data for permissions being revoked
+            $auth = Yii::$app->authManager;
+            $oldPermissions = array_keys($auth->getPermissionsByUser($user->id));
+
             Yii::$app->authManager->revokeAll($user->id);
+
+            RoleChangeService::syncAfterRoleChange($user->id, $oldPermissions, []);
+
+            // Ensure assignments are deactivated even if no permission mapping matched
+            AssignmentService::deactivateAssignmentsForUser($user->id);
 
             $transaction->commit();
             return $this->redirect(['index']);
@@ -128,10 +138,21 @@ class UserController extends Controller
             }
         }
 
+        // Capture current permissions before revoking so we can cleanup domain data
+        $auth = Yii::$app->authManager;
+        $oldPermissions = array_keys($auth->getPermissionsByUser($user->id));
+
         $user->status = User::STATUS_INACTIVE;
         $user->save(false);
 
-        Yii::$app->authManager->revokeAll($user->id);
+        // Revoke RBAC assignments on deactivate to prevent a deactivated user from acting
+        $auth->revokeAll($user->id);
+
+        // Cleanup domain data for revoked permissions (e.g., deactivate assignments)
+        RoleChangeService::syncAfterRoleChange($user->id, $oldPermissions, []);
+
+        // Ensure assignments are deactivated even if no permission mapping matched
+        AssignmentService::deactivateAssignmentsForUser($user->id);
 
         return $this->redirect(Yii::$app->request->referrer ?? ['index']);
     }
@@ -166,6 +187,9 @@ class UserController extends Controller
                 $auth->assign($role, $user->id);
             }
         }
+
+        // Reactivate assignments for the employee(s) of this user
+        AssignmentService::reactivateAssignmentsForUser($user->id);
 
         return $this->redirect(Yii::$app->request->referrer ?? ['index']);
     }
