@@ -31,4 +31,14 @@ class ConstructionAssignment extends ActiveRecord
     {
         return $this->hasOne(Employee::class, ['id' => 'employee_id']);
     }
+
+    public function getAssignmentsByEmployee($employee_id): array
+    {
+        return self::find()
+            // ->with('employee')
+            ->with('constructionSite')
+            ->where(['employee_id' => (int)$employee_id])
+            ->orderBy(['assigned_at' => SORT_DESC, 'id' => SORT_DESC])
+            ->all();
+    }
 }
