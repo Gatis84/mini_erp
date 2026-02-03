@@ -3,12 +3,12 @@
 
 use yii\bootstrap5\Html;
 
-$this->title = 'ElvaTask FE - Job Management';
+$this->title = 'WorkSys FE - Job Management';
 ?>
 
 <div class="site-index">
     <div class="jumbotron text-center bg-secondary bg-gradient-secondary green text-white py-5 mb-5">
-        <h1 class="display-4">ElvaTask SysAdmin</h1>
+        <h1 class="display-4">WorkSys SysAdmin</h1>
         <p class="lead">Manage Users, Admins, Employees, Construction Sites & Tasks</p>
         <a class="btn btn-light btn-lg" href="<?= Yii::$app->params['backendUrl'] ?>/index.php">Login to Backend</a>
     </div>
@@ -68,7 +68,7 @@ $this->title = 'ElvaTask FE - Job Management';
 
     <div id="christmas-banner" class="christmas-banner-wrapper">
         <div class="christmas-banner">
-            🎄 Priecīgus Ziemassvētkus un Laimīgu Jauno 2026. gadu no Gata! 🎄
+            🎄 Merry Christmas and Happy New Year 2026! 🎄
         </div>
         <button type="button" class="christmas-banner-close" aria-label="Close">
             ×
