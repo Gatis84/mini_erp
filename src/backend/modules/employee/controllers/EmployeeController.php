@@ -2,16 +2,20 @@
 
 namespace backend\modules\employee\controllers;
 
+use common\models\ConstructionAssignment;
 use common\models\ConstructionSite;
 use Yii;
 use common\models\Employee;
 use common\models\EmployeeSearch;
+use common\models\TaskAssignment;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use common\models\User;
 use yii\web\ForbiddenHttpException;
+use common\services\RoleChangeService;
+use common\services\AssignmentService;
 
 /**
  * EmployeeController implements the CRUD actions for Employee model.
@@ -128,9 +132,16 @@ class EmployeeController extends Controller
             throw new NotFoundHttpException('User not found');
         }
 
+        $assignments = (new TaskAssignment())->getEmployeeTasks($id);
+        $csAssignments = (new ConstructionAssignment())->getAssignmentsByEmployee($id);
+
+        // dd($csAssignments);
         return $this->render('view', [
             'employee' => $employee,
             'user' => $user,
+            'assignments' => $assignments,
+            'csAssignments' => $csAssignments
+
         ]);
     }
 
@@ -243,16 +254,39 @@ class EmployeeController extends Controller
                 $auth = Yii::$app->authManager;
 
                 if ($oldRole !== $employee->role) {
-                    $auth->revokeAll($user->id);
 
-                    if ($employee->role) {
-                        $role = $auth->getRole($employee->role);
-                        if ($role) {
-                            $auth->assign($role, $user->id);
-                        }
+                // Previous permissions
+                $oldPermissions = array_keys(
+                    $auth->getPermissionsByUser($user->id)
+                );
+
+                // RBAC Role change
+                $auth->revokeAll($user->id);
+
+                if ($employee->role) {
+                    $role = $auth->getRole($employee->role);
+                    if ($role) {
+
+                                        // dd($oldRole, $employee->role, $role);
+                        $auth->assign($role, $user->id);
                     }
                 }
 
+                // New/Updated permissions after RBAC revoke
+                $newPermissions = array_keys(
+                    $auth->getPermissionsByUser($user->id)
+                );
+
+                // Sync table assignment data after role change
+                RoleChangeService::syncAfterRoleChange(
+                    $user->id,
+                    $oldPermissions,
+                    $newPermissions
+                );
+
+                // Remove employee from Construction Site assigments if role changed to lower level
+                AssignmentService::deactivateAssignmentsForUser($user->id);
+            }
                 $transaction->commit();
                 return $this->redirect(['view', 'id' => $employee->id]);
 
@@ -279,13 +313,14 @@ class EmployeeController extends Controller
     public function actionDelete($id)
     {
         //TODO Employee deletion disabled for now
-        throw new \yii\web\ForbiddenHttpException('Employee deletion is not allowed. Delete User instead.');
+        throw new \yii\web\ForbiddenHttpException('Employee deletion is not allowed. Deactivate or Delete User instead.');
+        
+        $user = User::findOne($id);
 
-        if (!Yii::$app->user->can('user.delete')) {
+        if (!Yii::$app->user->can('user.deleteOther', ['targetUserId' => $user->id])) {
             throw new ForbiddenHttpException();
         }
 
-        $user = User::findOne($id);
         if (!$user) {
             throw new NotFoundHttpException('User not found');
         }
