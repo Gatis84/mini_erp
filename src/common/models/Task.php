@@ -61,7 +61,24 @@ class Task extends \yii\db\ActiveRecord
             [['created_at', 'updated_at', 'planned_start_at', 'planned_end_at', 'completed_at'], 'safe'],
             [['title'], 'string', 'max' => 128],
             [['construction_site_id'], 'exist', 'skipOnError' => true, 'targetClass' => ConstructionSite::class, 'targetAttribute' => ['construction_site_id' => 'id']],
+             // Custom rule - end date must be after start date
+            [['planned_end_at'], 'validateEndAfterStart'],
+            
         ];
+    }
+
+    public function validateEndAfterStart($attribute, $params)
+    {
+        if (!$this->hasErrors()) {
+            if ($this->planned_end_at && $this->planned_start_at) {
+                $start = strtotime($this->planned_start_at);
+                $end = strtotime($this->planned_end_at);
+                
+                if ($end <= $start) {
+                    $this->addError($attribute, 'End date/time must be after start date/time.');
+                }
+            }
+        }
     }
 
     /**

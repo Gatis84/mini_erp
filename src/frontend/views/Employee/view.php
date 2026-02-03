@@ -60,8 +60,8 @@ $this->params['breadcrumbs'][] = $this->title;
             'birth_date',
             'access_level',
             'role',
-            'created_at',
-            'updated_at',
+            'created_at:datetime',
+            'updated_at:datetime',
         ],
     ]) ?>
 
