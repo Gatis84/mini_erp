@@ -16,7 +16,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?php if (Yii::$app->user->can('user.delete')): ?>
+        <?php if (Yii::$app->user->can('user.deleteOther', ['targetUserId' => $user->id])): ?>
             <?= Html::a('Delete', ['delete', 'id' => $user->id], [
                 'class' => 'btn btn-danger',
                 'data' => ['confirm' => 'Confirm user delete?', 'method' => 'post'],

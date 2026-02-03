@@ -59,7 +59,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         ]);
                     },
                     'delete' => function ($url, $model) {
-                        if (!Yii::$app->user->can('user.delete')) {
+                        if (!Yii::$app->user->can('user.deleteOther', ['targetUserId' => $model->id])) {
                             return '';
                         }
                         return Html::a('Delete', ['delete', 'id' => $model->id], [
