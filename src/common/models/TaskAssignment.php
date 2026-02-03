@@ -11,21 +11,21 @@ use Yii;
  * @property int $task_id
  * @property int $employee_id
  * @property string|null $assigned_at
- * @property string|null $completed_at
- * @property string|null $planned_start_at
- * @property string|null $planned_end_at
  * @property int|null $status
- *
  * @property Employee $employee
  * @property Task $task
  */
 class TaskAssignment extends \yii\db\ActiveRecord
 {
-
+    /**
+     * Task assignment status reflects each employee’s progress
+     * while Task status describes the lifecycle of the task itself
+     */
     const STATUS_ASSIGNED = 0;
     const STATUS_IN_PROGRESS = 1;
     const STATUS_COMPLETED = 2;
     const STATUS_OVERDUE = 3;
+    const STATUS_CANCELED = 4;
 
     public $employee_ids;
 
@@ -46,13 +46,10 @@ class TaskAssignment extends \yii\db\ActiveRecord
         return [
             [['employee_ids'], 'required', 'on' => ['create', 'update']],
             [['employee_ids'], 'each', 'rule' => ['integer']],
-            [['completed_at'], 'default', 'value' => null],
-            // [['assigned_at'], 'default', 'value' => function() { return date('Y-m-d H:i:s'); } ],
             [['status'], 'default', 'value' => 0],
             [['task_id', 'employee_id'], 'required'],
             [['task_id', 'employee_id', 'status'], 'integer'],
-            [['assigned_at', 'completed_at'], 'safe'],
-            [['planned_start_at', 'planned_end_at'], 'safe'],
+            [['assigned_at'], 'safe'],
             [['employee_id'], 'exist', 'skipOnError' => true, 'targetClass' => Employee::class, 'targetAttribute' => ['employee_id' => 'id']],
             [['task_id'], 'exist', 'skipOnError' => true, 'targetClass' => Task::class, 'targetAttribute' => ['task_id' => 'id']],
         ];
@@ -68,9 +65,6 @@ class TaskAssignment extends \yii\db\ActiveRecord
             'task_id' => 'Task ID',
             'employee_id' => 'Employee ID',
             'assigned_at' => 'Assigned At',
-            'planned_start_at' => 'Planned Start At',
-            'planned_end_at' => 'Planned End At',
-            'completed_at' => 'Completed At',
             'status' => 'Status',
         ];
     }
@@ -95,6 +89,22 @@ class TaskAssignment extends \yii\db\ActiveRecord
         return $this->hasOne(Task::class, ['id' => 'task_id']);
     }
 
+    /**
+     * Gets all assignments from `task_assignment` for a given employee id.
+     * Returns an array of TaskAssignment models (includes all statuses).
+     *
+     * @param int $employee_id
+     * @return TaskAssignment[]
+     */
+    public function getEmployeeTasks($employee_id): array
+    {
+        return self::find()
+            ->with('task')
+            ->where(['employee_id' => (int)$employee_id])
+            ->orderBy(['assigned_at' => SORT_DESC, 'id' => SORT_DESC])
+            ->all();
+    }
+
     public static function statusList(): array
     {
         return [
@@ -102,6 +112,7 @@ class TaskAssignment extends \yii\db\ActiveRecord
             self::STATUS_IN_PROGRESS => 'In Progress',
             self::STATUS_COMPLETED => 'Completed',
             self::STATUS_OVERDUE => 'Overdue',
+            self::STATUS_CANCELED => 'Canceled',
         ];
     }
 
