@@ -1,4 +1,5 @@
 <?php
+
 $params = array_merge(
     require __DIR__ . '/../../common/config/params.php',
     require __DIR__ . '/../../common/config/params-local.php',
@@ -39,14 +40,23 @@ return [
         'authManager' => [
         'class' => 'yii\rbac\DbManager',
         ],
-        /*
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+                'api/v1/access/validate' => 'api/v1/access/validate',
+                'api/v2/access/validate' => 'api/v2/access/validate',
+                [
+                'class' => 'yii\rest\UrlRule',
+                'controller' => [
+                    'api/v2/task',
+                    'api/v2/project',
+                    'api/v2/employee',
+                ],
+                'pluralize' => false,
+                ],
             ],
         ],
-        */
     ],
     'params' => $params,
 ];
