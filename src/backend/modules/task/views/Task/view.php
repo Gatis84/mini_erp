@@ -46,9 +46,36 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'status',
                 'value' => fn($m) => $m->getStatusLabel(),
             ],
-            'created_by',
-            'created_at',
-            'updated_at',
+            [
+                'label' => 'Created_by',
+                'value' => function ($model) {
+                    $creator = $model->getCreatorData();
+                    return $creator ? 'ID:' . $creator['user_id'] . ' ' . $creator['first_name'] . ' ' . $creator['last_name'] : 'sysAdmin';
+                },
+            ],
+            // use 'datetime' format to use Yii2 formatter settings from common/config/main.php
+            // example in view: 2026-01-08 14:25:00.000 -> 2026-01-08 14:25
+            'created_at:datetime',
+            'updated_at:datetime',
+            [
+                'label' => 'Planned Start At',
+                'value' => function ($model) {
+                    return $model->planned_start_at ? Yii::$app->formatter->asDatetime($model->planned_start_at) : 'Not set';
+                },
+            ],
+            [
+                'label' => 'Planned End At',
+                'value' => function ($model) {
+                    return $model->planned_end_at ? Yii::$app->formatter->asDatetime($model->planned_end_at) : 'Not set';
+                },
+
+            ],
+            [
+                'label' => 'Completed At',
+                'value' => function ($model) {
+                    return $model->completed_at ? Yii::$app->formatter->asDatetime($model->completed_at) : 'Not completed';
+                },
+            ]
         ],
     ]) ?>
 
