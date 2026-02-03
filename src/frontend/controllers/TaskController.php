@@ -40,11 +40,11 @@ class TaskController extends Controller
     }
 
 
-    // TASK LIST
+    // FE TASK LIST
     public function actionIndex()
     {
         if (!Yii::$app->user->can('task.view')) {
-            throw new ForbiddenHttpException();
+            throw new ForbiddenHttpException('You do not have permission to view tasks.');
         }
 
         $searchModel = new TaskSearch();
@@ -76,11 +76,8 @@ class TaskController extends Controller
     public function actionCreate()
     {
 
-        $isFull = Yii::$app->user->can('task.create');
-        $isLimited = Yii::$app->user->can('task.createLimited');
-
-        if (!$isFull && !$isLimited) {
-            throw new ForbiddenHttpException();
+        if (!Yii::$app->user->can('task.createForm')) {
+            throw new ForbiddenHttpException('You do not have permission to create tasks.');
         }
 
         $model = new Task();
@@ -90,23 +87,15 @@ class TaskController extends Controller
 
             if ($model->load($this->request->post()) && $assignment->load($this->request->post())) {
 
-                // TEAM LEAD — can only create tasks in own projects
-                if ($isLimited && !$isFull) {
+                $canCreate = Yii::$app->user->can('task.create') ||
+                    Yii::$app->user->can('task.createLimited', [
+                        'constructionSiteId' => $model->construction_site_id,
+                    ]);
 
-                    $employee = Employee::findOne(['user_id' => Yii::$app->user->id]);
-                    if (!$employee) {
-                        throw new ForbiddenHttpException();
-                    }
-
-                    $allowedSites = (new \yii\db\Query())
-                        ->select('construction_site_id')
-                        ->from('construction_assignment')
-                        ->where(['employee_id' => $employee->id])
-                        ->column();
-
-                    if (!in_array((int)$model->construction_site_id, array_map('intval', $allowedSites), true)) {
-                        throw new ForbiddenHttpException('You are not allowed to create tasks in this project');
-                    }
+                if (!$canCreate) {
+                    throw new ForbiddenHttpException(
+                        'You are not allowed to create tasks in this construction site.'
+                    );
                 }
 
                 $transaction = Yii::$app->db->beginTransaction();
@@ -142,6 +131,8 @@ class TaskController extends Controller
                         'assignmentErrors' => $assignment->getErrors(),
                     ]);
 
+                    // dd($model->getErrors(), $assignment->getErrors(), $e);
+
                     Yii::$app->session->setFlash('error', 'Task could not be created.');
                 }
             }
@@ -158,12 +149,24 @@ class TaskController extends Controller
 
     public function actionUpdate($id)
     {
-        if (!Yii::$app->user->can('task.update')) {
-            throw new ForbiddenHttpException();
-        }
 
         $model = $this->findModel($id);
+
+        if (!Yii::$app->user->can('task.update', 
+        ['constructionSiteId' => $model->construction_site_id,])) {
+            throw new ForbiddenHttpException('You are not allowed to update tasks in this construction site.');
+        }
+
         $assignment = new TaskAssignment();
+
+        $employee = Employee::findOne(['user_id' => Yii::$app->user->id]);
+
+        $currentEmployeeAssignment = TaskAssignment::find()
+            ->where([
+                'task_id' => $model->id,
+                'employee_id' => $employee->id,
+            ])
+            ->one();
 
         $existingAssignments = TaskAssignment::find()
             ->where(['task_id' => $model->id])
@@ -176,32 +179,19 @@ class TaskController extends Controller
 
         if ($this->request->isPost) {
 
-            if ($model->load($this->request->post()) && $assignment->load($this->request->post())) {
+            if ($model->load($this->request->post()) 
+                && $assignment->load($this->request->post())) {
 
                 /**
                  * TEAM LEAD — can only update tasks in own projects
                  * ADMIN — skips this check
                  */
-                if (
-                    Yii::$app->user->can('task.updateLimited')
-                    && !Yii::$app->user->can('task.update')
-                ) {
-                    $employee = Employee::findOne(['user_id' => Yii::$app->user->id]);
-                    if (!$employee) {
-                        throw new ForbiddenHttpException();
-                    }
-
-                    $allowedSites = (new \yii\db\Query())
-                        ->select('construction_site_id')
-                        ->from('construction_assignment')
-                        ->where(['employee_id' => $employee->id])
-                        ->column();
-
-                    if (!in_array($model->construction_site_id, $allowedSites)) {
-                        throw new ForbiddenHttpException(
-                            'You are not allowed to update tasks in this project'
-                        );
-                    }
+                if (!Yii::$app->user->can('task.update', [
+                    'constructionSiteId' => $model->construction_site_id,
+                ])) {
+                    throw new ForbiddenHttpException(
+                        'You are not allowed to update tasks in this construction site.'
+                    );
                 }
 
                 $transaction = Yii::$app->db->beginTransaction();
@@ -218,8 +208,6 @@ class TaskController extends Controller
                         ['task_id' => $model->id],
                         ['NOT IN', 'employee_id', $newEmployeeIds],
                     ]);
-
-                    $existingMap = array_flip($assignment->employee_ids ?? []);
 
                     foreach ($newEmployeeIds as $employeeId) {
                         $exists = TaskAssignment::find()
@@ -254,6 +242,8 @@ class TaskController extends Controller
                         'exception' => $e,
                         'taskErrors' => $model->getErrors(),
                     ]);
+
+                    // dd($model->getErrors(), $assignment->getErrors());
 
                     Yii::$app->session->setFlash(
                         'error',
