@@ -7,9 +7,6 @@ use yii\data\ActiveDataProvider;
 use common\models\Task;
 use Yii;
 
-/**
- * TaskSearch represents the model behind the search form of `common\models\Task`.
- */
 class TaskSearch extends Task
 {
     /**
@@ -51,6 +48,17 @@ public function search($params, $formName = null)
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_DESC,
+                ],
+                'attributes' => [
+                    'id' => [
+                        'asc' => ['t.id' => SORT_ASC],
+                        'desc' => ['t.id' => SORT_DESC],
+                    ],
+                ],
+            ],
         ]);
 
         $this->load($params, $formName);
@@ -64,8 +72,12 @@ public function search($params, $formName = null)
             't.construction_site_id' => $this->construction_site_id,
         ]);
 
+        $query->andFilterWhere(['a.employee_id' => $this->employee_id]);
+        $query->select('t.*')->distinct();
+        // $query->orderBy(['t.id' => SORT_DESC]);
+
     /**
-     * BACKEND SYSADMIN — redz visu
+     * BACKEND SYSADMIN — Can see all tasks
      */
     if (Yii::$app->id === 'app-backend' && Yii::$app->user->can('sysAdmin')) {
         return $dataProvider;
