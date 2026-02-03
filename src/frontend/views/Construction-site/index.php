@@ -33,8 +33,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'location',
             'area_m2',
             'required_access_level',
-            'created_at',
-            //'updated_at',
+            'created_at:datetime',
             [
                 'class' => ActionColumn::class,
                 'urlCreator' => function ($action, ConstructionSite $model, $key, $index, $column) {

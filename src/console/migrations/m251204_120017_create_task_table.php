@@ -17,12 +17,13 @@ class m251204_120017_create_task_table extends Migration
             'construction_site_id' => $this->integer()->notNull(),
             'title' => $this->string(128)->notNull(),
             'description' => $this->text(),
-            // 'employee_id' => $this->integer()->notNull(), // Assigned via task_assignment table
-            // 'task_date' => $this->date()->notNull(),
             'status' => $this->smallInteger()->defaultValue(0),
             'created_by' => $this->integer()->notNull(),
             'created_at' => $this->dateTime()->defaultExpression('GETDATE()'),
             'updated_at' =>  $this->dateTime()->defaultExpression('GETDATE()'),
+            'planned_start_at' => $this->dateTime(),
+            'planned_end_at' => $this->dateTime(),
+            'completed_at' => $this->dateTime(),
         ]);
 
         $this->addForeignKey(

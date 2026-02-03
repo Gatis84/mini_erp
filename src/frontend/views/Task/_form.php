@@ -65,6 +65,18 @@ $assignment = $assignment ?? new TaskAssignment();
 
     <?= $form->field($model, 'updated_at')->textInput() ?> -->
 
+        <?= $form->field($model, 'planned_start_at')->input('datetime-local', [
+        'value' => $model->planned_start_at ? date('Y-m-d\TH:i', strtotime($model->planned_start_at)) : null
+    ]) ?>
+
+    <?= $form->field($model, 'planned_end_at')->input('datetime-local', [
+        'value' => $model->planned_end_at ? date('Y-m-d\TH:i', strtotime($model->planned_end_at)) : null
+    ]) ?>
+    
+    <?= $form->field($model, 'completed_at')->input('datetime-local', [
+        'value' => $model->completed_at ? date('Y-m-d\TH:i', strtotime($model->completed_at)) : null
+    ]) ?>
+
     <div class="form-group">
         <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>
     </div>

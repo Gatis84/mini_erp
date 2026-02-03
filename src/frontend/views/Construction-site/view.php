@@ -35,8 +35,8 @@ YiiAsset::register($this);
             'location',
             'area_m2',
             'required_access_level',
-            'created_at',
-            'updated_at',
+            'created_at:datetime',
+            'updated_at:datetime',
         ],
     ]) ?>
 

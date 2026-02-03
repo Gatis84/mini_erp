@@ -5,6 +5,8 @@ namespace common\models;
 use Yii;
 use yii\behaviors\TimestampBehavior;
 use yii\behaviors\BlameableBehavior;
+use common\models\Employee;
+use common\behaviors\DateTimeBehavior;
 
 /**
  * This is the model class for table "task".
@@ -17,12 +19,19 @@ use yii\behaviors\BlameableBehavior;
  * @property int $created_by
  * @property string|null $created_at
  * @property string|null $updated_at
+ * @property string|null $planned_start_at
+ * @property string|null $planned_end_at
+ * @property string|null $completed_at
  *
  * @property ConstructionSite $constructionSite
  * @property TaskAssignment[] $taskAssignments
  */
 class Task extends \yii\db\ActiveRecord
 {
+    /**
+     * Task status describes the lifecycle of the task itself,
+     * while assignment status reflects each employee’s progress.
+     */
 
     const STATUS_DRAFT = 0;
     const STATUS_ACTIVE = 1;
@@ -49,8 +58,7 @@ class Task extends \yii\db\ActiveRecord
             [['construction_site_id', 'title'], 'required'],
             [['construction_site_id', 'status', 'created_by'], 'integer'],
             [['description'], 'string'],
-            [['created_at', 'updated_at'], 'safe'],
-            [['created_by'], 'integer'],
+            [['created_at', 'updated_at', 'planned_start_at', 'planned_end_at', 'completed_at'], 'safe'],
             [['title'], 'string', 'max' => 128],
             [['construction_site_id'], 'exist', 'skipOnError' => true, 'targetClass' => ConstructionSite::class, 'targetAttribute' => ['construction_site_id' => 'id']],
         ];
@@ -70,6 +78,9 @@ class Task extends \yii\db\ActiveRecord
             'created_by' => 'Created By',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
+            'planned_start_at' => 'Planned Start At',
+            'planned_end_at' => 'Planned End At',
+            'completed_at' => 'Completed At',
         ];
     }
 
@@ -121,13 +132,23 @@ class Task extends \yii\db\ActiveRecord
                 'createdAtAttribute' => 'created_at',
                 'updatedAtAttribute' => 'updated_at',
                 'value' => function() {
-                    return date('Y-m-d H:i:s'); // SQL Server safe format
+                    return date('Y-m-d H:i:s'); // MSSQL Server safe format
                 },
             ],
             [
             'class' => BlameableBehavior::class,
             'createdByAttribute' => 'created_by',
             'updatedByAttribute' => null,
+            ],
+            [
+            'class' => DateTimeBehavior::class,
+                'attributesList' => [
+                    'planned_start_at',
+                    'planned_end_at',
+                    'completed_at',
+                    'created_at',
+                    'updated_at',
+                ],
             ],
         ];
     }

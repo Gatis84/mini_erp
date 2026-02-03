@@ -13,8 +13,10 @@ class m251222_173338_create_construction_assignment extends Migration
             'id' => $this->primaryKey(),
             'construction_site_id' => $this->integer()->notNull(),
             'employee_id' => $this->integer()->notNull(),
+            'active' => $this->boolean()->defaultValue(1), //"TRUE"&"FALSE" is not permitted by SQLserver
             'assigned_at' => $this->dateTime()->defaultExpression('GETDATE()'),
-            'completed_at' => $this->dateTime(),
+            'reassigned_at' => $this->dateTime()->null(),
+            'ended_at' => $this->dateTime()->null(),
         ]);
 
         $this->addForeignKey(

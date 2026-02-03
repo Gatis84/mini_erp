@@ -14,9 +14,6 @@ class m251206_220446_task_assignment extends Migration
             'task_id' => $this->integer()->notNull(),
             'employee_id' => $this->integer()->notNull(),
             'assigned_at' => $this->dateTime()->defaultExpression('GETDATE()'),
-            'planned_start_at' => $this->dateTime(),
-            'planned_end_at' => $this->dateTime(),
-            'completed_at' => $this->dateTime(),
             'status' => $this->smallInteger()->defaultValue(0),
         ]);
 
