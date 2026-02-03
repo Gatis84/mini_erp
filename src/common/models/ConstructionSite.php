@@ -23,6 +23,7 @@ class ConstructionSite extends \yii\db\ActiveRecord
 {
 
     public $teamLeadIds = []; // Virtual attribute for form
+    public array $teamLeadAssignments = [];
 
     /**
      * {@inheritdoc}
