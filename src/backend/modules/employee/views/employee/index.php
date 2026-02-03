@@ -54,22 +54,15 @@ $this->params['breadcrumbs'][] = $this->title;
                 'template' => '{view} {update} {deactivate}',
                 'buttons' => [
                     'deactivate' => function ($url, Employee $model) {
-
                         $user = $model->user;
                         if (!$user) {
                             return '';
                         }
 
-                        $canDeactivate = Yii::$app->user->can('user.deactivate')
-                            || Yii::$app->user->can('user.deactivateLimited', ['model' => $model]);
-
-                        $canActivate = Yii::$app->user->can('user.activate')
-                            || Yii::$app->user->can('user.activateLimited', ['model' => $model]);
-
-                        if ((int)$user->status === User::STATUS_ACTIVE && $canDeactivate) {
+                        if ((int)$user->status === User::STATUS_ACTIVE) {
                             return Html::a(
                                 'Deactivate',
-                                ['/user/user/deactivate', 'id' => $model->id],
+                                ['/user/user/deactivate', 'id' => $user->id],
                                 [
                                     'data' => [
                                         'confirm' => 'Deactivate this employee?',
@@ -80,10 +73,10 @@ $this->params['breadcrumbs'][] = $this->title;
                             );
                         }
 
-                        if ((int)$user->status === User::STATUS_INACTIVE && $canActivate) {
+                        if ((int)$user->status === User::STATUS_INACTIVE) {
                             return Html::a(
                                 'Activate',
-                                ['/user/user/activate', 'id' => $model->id],
+                                ['/user/user/activate', 'id' => $user->id],
                                 [
                                     'data' => [
                                         'confirm' => 'Activate this employee?',
