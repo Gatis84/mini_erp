@@ -18,7 +18,6 @@ class EmployeeSearch extends Employee
     public function rules()
     {
         return [
-            // [['id', 'user_id', 'access_level', 'status'], 'integer'],
             [['id', 'user_id', 'access_level'], 'integer'],
             [['first_name', 'last_name', 'birth_date', 'role', 'created_at', 'updated_at'], 'safe'],
         ];
@@ -43,6 +42,7 @@ class EmployeeSearch extends Employee
      */
     public function search($params, $formName = null)
     {
+
         $query = Employee::find()->alias('e');
 
         // BACKEND SYSADMIN — NO FILTERS
@@ -50,23 +50,18 @@ class EmployeeSearch extends Employee
             return $this->buildProvider($query, $params, $formName);
         }
 
-        /**
-         * FRONTEND admin — redz visus
-         */
+        // FRONTEND admin — can see all employees
         if (Yii::$app->user->can('project.create')) {
             return $this->buildProvider($query, $params, $formName);
         }
 
-        /**
-         * FRONTEND teamLead
-         * Redz TIKAI darbiniekus, kas strādā viņa pārvaldītajos objektos
-         */
-        if (Yii::$app->user->can('project.update')) {
+        // FRONTEND teamLead - can see employees assigned to his projects and his own record
+        if (Yii::$app->user->can('employee.view')) {
 
             $teamLead = Employee::findOne(['user_id' => Yii::$app->user->id]);
 
             if (!$teamLead) {
-                $query->andWhere('0=1'); // nav darbinieka ieraksta — neredz neko, drošības pēc atgriež tukšu sarakstu
+                $query->andWhere('0=1');
                 return $this->buildProvider($query, $params, $formName);
             }
 
@@ -77,7 +72,11 @@ class EmployeeSearch extends Employee
                 ->innerJoin(['ta' => 'task_assignment'], 'ta.task_id = t.id')
                 ->where(['ca.employee_id' => $teamLead->id]);
 
-            $query->andWhere(['e.id' => $subQuery]);
+            $query->andWhere([
+                'or',
+                ['e.id' => $teamLead->id],
+                ['e.id' => $subQuery],
+            ]);
 
             return $this->buildProvider($query, $params, $formName);
         }
@@ -85,17 +84,15 @@ class EmployeeSearch extends Employee
         /**
          * EMPLOYEE — redz tikai sevi
          */
-
-        // echo '<pre>';
-        // var_dump(Yii::$app->user->can('employee.viewOwn'));die;
-        // if (Yii::$app->user->can('employee.viewOwn')) {
-            $query->andWhere(['e.user_id' => Yii::$app->user->id]);
+        $owner = Employee::findOne(['user_id' => Yii::$app->user->id]);
+        if (!$owner) {
+            $query->andWhere('0=1');
             return $this->buildProvider($query, $params, $formName);
-        // }
-
-        // drošības fallback
-        // $query->andWhere('0=1');
-        // return $this->buildProvider($query, $params, $formName);
+        }
+        
+        $query->andWhere(['e.id' => $owner->id]);
+        
+        return $this->buildProvider($query, $params, $formName);
 
     }
 
