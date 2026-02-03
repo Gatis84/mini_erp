@@ -15,19 +15,25 @@ class OwnerRule extends Rule
 
     public function execute($userId, $item, $params)
     {
-
-        if (\Yii::$app->user->can('sysAdmin')) {
-            return true;
-        }
         
         if (!isset($params['model'])) {
             return false;
         }
-
+            
         $model = $params['model'];
 
-        // TASKS
-         if ($model instanceof Task) {
+        // TaskAssignment — employee owns his assignment
+        if ($model instanceof TaskAssignment) {
+                $employeeId = Employee::find()
+                    ->select('id')
+                    ->where(['user_id' => $userId])
+                    ->scalar();
+
+            return $employeeId && $model->employee_id == $employeeId;
+        }
+
+        // TASKS — employee assigned to task
+        if ($model instanceof Task) {
             return TaskAssignment::find()
                 ->joinWith('employee')
                 ->where([
@@ -37,22 +43,10 @@ class OwnerRule extends Rule
                 ->exists();
         }
 
-        // EMPLOYEE
+        // EMPLOYEE — own profile
         if ($model instanceof Employee) {
             return $model->user_id == $userId;
         }
-
-        // CONSTRUCTION SITE
-        if ($model instanceof ConstructionSite) {
-            return ConstructionAssignment::find()
-                ->joinWith('employee')
-                ->andWhere([
-                    'construction_assignment.construction_site_id' => $model->id,
-                    'employee.user_id' => $userId,
-                ])
-                ->exists();
-        }
-
 
         return false;
     }
