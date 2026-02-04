@@ -84,7 +84,7 @@ class SeedController extends Controller
 
                 $user = new User();
                 $user->username = strtolower($firstName . '.' . $lastName . '-' . ($i+1));
-                $user->email = strtolower($firstName . '.' . $lastName . '-' . ($i+1) . '@elva-test.com');
+                $user->email = strtolower($firstName . '.' . $lastName . '-' . ($i+1) . '@global-test.com');
                 $user->status = $status;
                 $user->setPassword('user123' . ($i+1));
                 $user->generateAuthKey();
