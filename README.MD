@@ -1,4 +1,4 @@
-- [ Read in Latvian language](README.lv.md)
+- [ Read in Latvian language](README.lv.MD)
 
 # Work management module (Yii2 Advanced + RBAC custom + Gii for templates + MSSQL + Docker)
 
