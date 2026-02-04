@@ -152,8 +152,7 @@ class TaskController extends Controller
 
         $model = $this->findModel($id);
 
-        if (!Yii::$app->user->can('task.update', 
-        ['constructionSiteId' => $model->construction_site_id,])) {
+        if (!Yii::$app->user->can('task.createForm')) {
             throw new ForbiddenHttpException('You are not allowed to update tasks in this construction site.');
         }
 
@@ -186,9 +185,12 @@ class TaskController extends Controller
                  * TEAM LEAD — can only update tasks in own projects
                  * ADMIN — skips this check
                  */
-                if (!Yii::$app->user->can('task.update', [
-                    'constructionSiteId' => $model->construction_site_id,
-                ])) {
+                $canCreate = Yii::$app->user->can('task.create') ||
+                    Yii::$app->user->can('task.createLimited', [
+                        'constructionSiteId' => $model->construction_site_id,
+                    ]);
+
+                if (!$canCreate) {
                     throw new ForbiddenHttpException(
                         'You are not allowed to update tasks in this construction site.'
                     );
