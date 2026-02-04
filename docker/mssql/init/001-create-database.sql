@@ -1,2 +1,2 @@
-CREATE DATABASE elva_db;
+CREATE DATABASE worksys_db;
 GO
